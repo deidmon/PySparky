@@ -1,49 +1,48 @@
-# Starlight Starter Kit: Basics
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+# PySparky
 
-```
-npm create astro@latest -- --template starlight
-```
+Documentación interactiva y moderna para aprender PySpark desde cero hasta nivel avanzado.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## 🚀 ¿Qué es PySparky?
 
-## 🚀 Project Structure
+PySparky es un sitio web de documentación construido con Astro + Starlight, pensado para guiarte en el aprendizaje de PySpark, el framework de procesamiento distribuido en Python.
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+Incluye:
+- Guías paso a paso (instalación, fundamentos, transformaciones, SQL, optimización, etc.)
+- Ejemplos prácticos y código listo para usar
+- Buenas prácticas y casos de uso avanzados
+- Navegación rápida y búsqueda integrada
+
+## 📁 Estructura del Proyecto
 
 ```
 .
-├── public/
+├── public/                  # Archivos estáticos (favicon, etc.)
 ├── src/
-│   ├── assets/
+│   ├── assets/              # Imágenes y recursos
 │   ├── content/
-│   │   └── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+│   │   └── docs/            # Documentación en .mdx
+│   └── content.config.ts    # Configuración de contenido
+├── astro.config.mjs         # Configuración principal de Astro/Starlight
+├── package.json             # Dependencias y scripts
+└── tsconfig.json            # Configuración TypeScript
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+## �‍💻 Comandos útiles
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+| Comando           | Acción                                         |
+|-------------------|-----------------------------------------------|
+| `npm install`     | Instala las dependencias                      |
+| `npm run dev`     | Inicia el servidor local en `localhost:4321`  |
+| `npm run build`   | Genera el sitio para producción en `./dist/`  |
+| `npm run preview` | Previsualiza el sitio generado                |
 
-Static assets, like favicons, can be placed in the `public/` directory.
+## 🌐 ¿Cómo contribuir?
 
-## 🧞 Commands
+Puedes proponer mejoras, agregar ejemplos o corregir errores abriendo un issue o PR en el repositorio.
 
-All commands are run from the root of the project, from a terminal:
+## � Recursos útiles
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+- [Documentación oficial de PySpark](https://spark.apache.org/docs/latest/api/python/)
+- [Starlight Docs](https://starlight.astro.build/)
+- [Astro Docs](https://docs.astro.build)
