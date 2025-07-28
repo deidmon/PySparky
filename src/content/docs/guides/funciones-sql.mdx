@@ -1,0 +1,140 @@
+---
+title: Funciones SQL integradas
+description: Uso de funciones SQL en PySpark.
+---
+
+PySpark ofrece una amplia variedad de **funciones SQL integradas** (built-in functions) que puedes usar en transformaciones sin necesidad de escribir SQL directamente.
+
+Estas funciones provienen del módulo:
+
+```python
+from pyspark.sql.functions import *
+```
+
+### 🔹 Tipos de funciones integradas
+
+Las funciones integradas se agrupan en varias categorías:
+
+### 1. 📐 Funciones de transformación de columnas
+
+| Función | Descripción |
+|---|---|
+| `col("nombre")` | Hace referencia a una columna |
+| `lit(valor)` | Crea una columna con un valor constante |
+| `alias("nuevo")` | Renombra una columna |
+| `withColumn()` | Crea o reemplaza una columna existente |
+
+**Ejemplo:**
+
+```python
+df.withColumn("doble_edad", col("edad") * 2)
+```
+
+### 2. 🔤 Funciones de texto (String)
+
+| Función | Descripción |
+|---|---|
+| `lower(col)` | Convierte a minúsculas |
+| `upper(col)` | Convierte a mayúsculas |
+| `trim(col)` | Elimina espacios en blanco |
+| `substring(col, i, n)` | Extrae subcadena desde posición `i` |
+| `length(col)` | Longitud de la cadena |
+| `concat(col1, col2)` | Concatena columnas |
+
+**Ejemplo:**
+
+```python
+df.select(upper(col("nombre")), length(col("nombre")))
+```
+
+### 3. 📆 Funciones de fecha y hora
+
+| Función | Descripción |
+|---|---|
+| `current_date()` | Fecha actual |
+| `current_timestamp()` | Fecha y hora actual |
+| `datediff(col1, col2)` | Diferencia de días entre fechas |
+| `year(col)` | Año de una fecha |
+| `month(col)` | Mes de una fecha |
+| `date_format(col, fmt)` | Formato personalizado (`'yyyy-MM'`) |
+
+**Ejemplo:**
+
+```python
+df.select(current_date(), year(col("fecha_nacimiento")))
+```
+
+### 4. 🔢 Funciones numéricas
+
+| Función | Descripción |
+|---|---|
+| `round(col, n)` | Redondea a `n` decimales |
+| `floor(col)` | Redondeo hacia abajo |
+| `ceil(col)` | Redondeo hacia arriba |
+| `abs(col)` | Valor absoluto |
+| `sqrt(col)` | Raíz cuadrada |
+
+**Ejemplo:**
+
+```python
+df.select(round(col("precio"), 2))
+```
+
+### 5. 🧮 Funciones de agregación
+
+Usadas con `groupBy`, devuelven un valor agregado.
+
+| Función | Descripción |
+|---|---|
+| `count(col)` | Cuenta valores |
+| `sum(col)` | Suma |
+| `avg(col)` | Promedio |
+| `min(col)` | Mínimo |
+| `max(col)` | Máximo |
+
+**Ejemplo:**
+
+```python
+df.groupBy("categoria").agg(avg("precio"), max("precio"))
+```
+
+### 6. 🔁 Funciones condicionales
+
+| Función | Descripción |
+|---|---|
+| `when(cond, val)` | Similar a `IF`, retorna `val` si `cond` es true |
+| `otherwise(val)` | Valor por defecto si no se cumple `cond` |
+
+**Ejemplo:**
+
+```python
+df.withColumn("etiqueta", when(col("edad") >= 18, "Adulto").otherwise("Menor"))
+```
+
+### 7. 🧠 Funciones de orden y ventana (window functions)
+
+Estas se aplican sobre una "ventana" de datos.
+
+| Función | Descripción |
+|---|---|
+| `row_number()` | Número de fila |
+| `rank()` | Ranking con saltos |
+| `dense_rank()` | Ranking sin saltos |
+| `lag(col)` | Valor anterior |
+| `lead(col)` | Valor siguiente |
+
+Requiere `Window`:
+
+```python
+from pyspark.sql.window import Window
+
+window_spec = Window.partitionBy("categoria").orderBy("precio")
+df.withColumn("pos", row_number().over(window_spec))
+```
+
+### 🧠 Buenas prácticas
+
+* Importa funciones individualmente si vas a usar pocas (`from pyspark.sql.functions import col, when`).
+* Usa `alias()` para renombrar columnas temporalmente en `select()`.
+* Encadena funciones para evitar múltiples transformaciones innecesarias.
+* Combina `withColumn()` con `when()` para generar etiquetas, banderas o columnas derivadas.

@@ -1,0 +1,80 @@
+---
+title: Lectura y escritura de datos
+description: Cómo leer y escribir datos en PySpark.
+---
+
+PySpark permite leer y escribir datos en una variedad de formatos y fuentes, lo cual es esencial para cualquier flujo de trabajo de análisis o ingeniería de datos.
+
+### 📁 Formatos de archivo compatibles
+
+* **CSV**
+* **JSON**
+* **Parquet**
+* **Avro**
+* **ORC**
+* **Delta (con Delta Lake)**
+
+### 🔽 Lectura de archivos
+
+```python
+# Lectura de CSV
+df = spark.read.csv("ruta/del/archivo.csv", header=True, inferSchema=True)
+
+# Lectura de JSON
+df = spark.read.json("ruta/del/archivo.json")
+
+# Lectura de Parquet
+df = spark.read.parquet("ruta/del/archivo.parquet")
+```
+
+Opciones comunes:
+* `header`: `True` si el archivo tiene encabezado.
+* `inferSchema`: `True` para que Spark detecte los tipos automáticamente.
+* `sep`: separador de campos (ej. `;`, `|`).
+
+### 🔼 Escritura de archivos
+
+```python
+# Escritura a CSV
+df.write.csv("ruta/salida.csv", header=True, mode="overwrite")
+
+# Escritura a Parquet
+df.write.parquet("ruta/salida.parquet", mode="overwrite")
+```
+
+Modos de escritura:
+* `overwrite`: sobreescribe archivos existentes.
+* `append`: agrega al archivo existente.
+* `ignore`: no hace nada si el archivo ya existe.
+* `error` (default): lanza un error si el archivo ya existe.
+
+### 🧠 Lectura desde fuentes externas
+
+* **Bases de datos (JDBC)**:
+
+```python
+df = spark.read \
+    .format("jdbc") \
+    .option("url", "jdbc:mysql://localhost:3306/mi_base") \
+    .option("dbtable", "mi_tabla") \
+    .option("user", "usuario") \
+    .option("password", "clave") \
+    .load()
+```
+
+* **Amazon S3 / Google Cloud Storage / Azure Blob**: requiere configuración de claves de acceso y rutas.
+
+### 🔄 Conversión entre formatos
+
+```python
+# Convertir de CSV a Parquet
+df = spark.read.csv("data.csv", header=True, inferSchema=True)
+df.write.parquet("data.parquet")
+```
+
+### ✅ Buenas prácticas
+
+* Usa formatos como **Parquet** o **Delta** para mayor rendimiento.
+* Define `schema` manualmente en producción para evitar inferencias incorrectas.
+* Limpia y valida la fuente antes de cargarla a memoria.
+* Controla el `mode` de escritura para evitar sobrescritura no deseada.

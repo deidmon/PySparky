@@ -1,0 +1,102 @@
+---
+title: Persistencia y optimización
+description: Técnicas para mejorar el rendimiento en PySpark.
+---
+
+La persistencia y la optimización son esenciales en PySpark para mejorar el rendimiento, reducir tiempos de ejecución y evitar operaciones costosas repetidas durante el procesamiento distribuido.
+
+### 💾 Persistencia: Cache vs Persist
+
+PySpark ejecuta operaciones de forma **perezosa** (lazy), lo que significa que no se ejecutan hasta que se necesita un resultado. Al persistir un DataFrame o RDD, evitamos recalcularlo en cada acción.
+
+#### `cache()`
+
+* Almacena el DataFrame/RDD en memoria.
+* Útil cuando se reutiliza varias veces y entra en memoria.
+
+```python
+df.cache()
+df.count()  # Fuerza la ejecución
+```
+
+#### `persist()`
+
+* Más flexible que `cache()`, permite elegir el nivel de almacenamiento.
+
+```python
+from pyspark.storagelevel import StorageLevel
+
+df.persist(StorageLevel.MEMORY_AND_DISK)
+df.count()
+```
+
+**Niveles comunes:**
+
+| Nivel | Descripción |
+|---|---|
+| MEMORY_ONLY | Solo en memoria (error si no cabe) |
+| MEMORY_AND_DISK | Memoria y disco si es necesario |
+| DISK_ONLY | Solo en disco |
+| MEMORY_ONLY_SER | Memoria con serialización |
+
+#### `unpersist()`
+
+* Libera el espacio ocupado por el DataFrame/RDD:
+
+```python
+df.unpersist()
+```
+
+### ⚙️ Optimización de ejecuciones
+
+#### 1. **Proyección selectiva (column pruning)**
+
+Evita cargar columnas innecesarias:
+
+```python
+df.select("nombre", "edad")
+```
+
+#### 2. **Filtro temprano (predicate pushdown)**
+
+Aplica filtros lo antes posible para reducir datos:
+
+```python
+df.filter("edad > 30")
+```
+
+#### 3. **Uso de formatos eficientes**
+
+Parquet y ORC son preferibles a CSV o JSON.
+
+```python
+df.write.parquet("ruta/")
+```
+
+#### 4. **Uso de `explain()` para analizar planes**
+
+Permite revisar el plan de ejecución y detectar cuellos de botella:
+
+```python
+df.explain(True)
+```
+
+### 🔁 Broadcast joins
+
+Cuando uno de los DataFrames es pequeño, es mejor transmitirlo (broadcast):
+
+```python
+from pyspark.sql.functions import broadcast
+
+df1.join(broadcast(df2), "id")
+```
+
+Esto evita el shuffle de datos masivo.
+
+### 🧠 Buenas prácticas de optimización
+
+* Lee solo lo necesario: columnas y filas.
+* Usa `cache()` cuando el DF será reutilizado.
+* Prefiere `parquet` u `ORC` por su compresión y estructura.
+* Combina `repartition()` antes de `write()` para evitar miles de archivos pequeños.
+* Observa el número de particiones y ajusta según el tamaño del cluster.

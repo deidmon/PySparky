@@ -1,0 +1,141 @@
+---
+title: Testing y buenas prácticas
+description: Estrategias de testing y buenas prácticas en PySpark.
+---
+
+### 🧠 ¿Por qué es importante?
+
+En proyectos con PySpark, es esencial garantizar que las transformaciones de datos sean correctas, reproducibles y escalables. Hacer **testing** y seguir **buenas prácticas** ayuda a:
+
+* Detectar errores temprano.
+* Mantener código limpio y mantenible.
+* Facilitar colaboración entre equipos.
+* Prevenir errores en producción.
+
+### ✅ Testing en PySpark
+
+#### 🧪 1. Unit testing (Pruebas unitarias)
+
+Se enfoca en probar funciones y transformaciones individuales sobre pequeños DataFrames controlados.
+
+**Ejemplo con `pytest`:**
+
+```python
+from pyspark.sql import SparkSession
+import pytest
+
+@pytest.fixture(scope="session")
+def spark():
+    return SparkSession.builder.master("local[1]").appName("test").getOrCreate()
+
+def test_filter_adultos(spark):
+    data = [("Ana", 17), ("Luis", 22)]
+    df = spark.createDataFrame(data, ["nombre", "edad"])
+    
+    resultado = df.filter(df.edad >= 18)
+    
+    assert resultado.count() == 1
+    assert resultado.collect()[0]["nombre"] == "Luis"
+```
+
+#### 🧬 2. DataFrame equality (comparar resultados esperados)
+
+Puedes verificar que el resultado esperado y el obtenido tengan los mismos datos, sin importar el orden:
+
+```python
+from pyspark.sql import Row
+
+esperado = spark.createDataFrame([Row(nombre="Luis", edad=22)])
+resultado = df.filter(df.edad >= 18)
+
+assert sorted(esperado.collect()) == sorted(resultado.collect())
+```
+
+### 🧭 Buenas prácticas en PySpark
+
+#### 📁 1. Organización del código
+
+* Separa el código en **módulos reutilizables**: lectura, transformación, validación, escritura.
+* Usa funciones puras y evita efectos secundarios en transformaciones.
+* Usa `main()` y `if __name__ == "__main__"` para ejecutar scripts.
+
+#### 📚 2. Documentación
+
+* Documenta las funciones, especialmente las que transforman datos.
+* Incluye ejemplos de entrada/salida.
+
+```python
+def limpiar_nombres(df):
+    """
+    Limpia espacios y pone en minúscula los nombres de los clientes.
+    
+    Parámetros:
+        df (DataFrame): DataFrame con columna 'nombre'.
+    
+    Retorna:
+        DataFrame con columna 'nombre' limpia.
+    """
+    return df.withColumn("nombre", lower(trim(col("nombre"))))
+```
+
+#### 🔎 3. Validaciones y chequeos
+
+* Verifica esquema de entrada con `df.printSchema()`.
+* Comprueba valores nulos antes de procesar.
+* Usa `assert` o logs para validar supuestos.
+
+```python
+assert "monto" in df.columns, "Falta la columna monto"
+```
+
+#### 🧰 4. Uso de funciones integradas de Spark
+
+Evita usar `collect()` innecesariamente (ya que trae los datos al driver). Usa funciones como:
+
+* `withColumn()`
+* `selectExpr()`
+* `filter()`
+* `groupBy().agg()`
+
+Estas son más eficientes y escalan mejor que `map()` con UDFs.
+
+#### 📦 5. Uso de formatos eficientes
+
+* Prefiere `parquet`, `delta`, o `orc` para almacenamiento.
+* Evita `csv` para grandes volúmenes.
+
+#### 📊 6. Uso de particiones y cache adecuadamente
+
+* Aplica `.repartition()` o `.coalesce()` según el caso.
+* Usa `.cache()` si vas a reutilizar un DataFrame en varias operaciones.
+
+#### 🧼 7. Limpieza del entorno de pruebas
+
+Siempre detén el `SparkSession` después de pruebas para evitar conflictos:
+
+```python
+spark.stop()
+```
+
+### 🧪 Herramientas recomendadas
+
+* **pytest**: framework de testing.
+* **hypothesis**: testing con generación de datos aleatorios.
+* **assertpy** o `assert` básico.
+* **CI/CD**: Integrar pruebas automáticas con GitHub Actions o GitLab CI.
+
+### 📘 Ejemplo de estructura ideal del proyecto
+
+```
+mi_proyecto_pyspark/
+│
+├── main.py
+├── transformaciones/
+│   └── limpieza.py
+├── tests/
+│   └── test_limpieza.py
+├── datos/
+│   └── ejemplo.csv
+├── requirements.txt
+└── README.md
+```

@@ -1,0 +1,138 @@
+---
+title: Configuración e instalación
+description: Cómo instalar y configurar PySpark en tu entorno local.
+---
+
+
+
+Esta sección cubre cómo instalar y configurar PySpark en distintos entornos, tanto local como en la nube, y cómo crear una sesión de Spark para comenzar a trabajar.
+
+---
+
+### ✅ ¿Qué necesitas para usar PySpark?
+
+Para ejecutar PySpark necesitas:
+
+* **Java (versión 8 o superior)** – Spark corre sobre JVM.
+* **Apache Spark** – Motor de procesamiento distribuido.
+* **Python (3.6 o superior)** – PySpark es la API de Spark para Python.
+* **PySpark** – El paquete que conecta Spark con Python.
+
+---
+
+### 📦 Instalación local (Windows, macOS, Linux)
+
+#### 1. Instala Java
+
+Asegúrate de tener instalado Java 8 o superior:
+
+```bash
+java -version
+```
+
+Si no está instalado, puedes descargarlo desde:
+
+* [https://adoptium.net/](https://adoptium.net/)
+* [https://www.oracle.com/java/technologies/javase-jdk11-downloads.html](https://www.oracle.com/java/technologies/javase-jdk11-downloads.html)
+
+> ⚠️ Asegúrate de configurar la variable de entorno `JAVA_HOME`.
+
+---
+
+#### 2. Instala Apache Spark
+
+Descarga Spark desde su sitio oficial:
+👉 [https://spark.apache.org/downloads.html](https://spark.apache.org/downloads.html)
+
+Descomprime y configura las variables de entorno:
+
+```bash
+export SPARK_HOME=/ruta/a/spark
+export PATH=$SPARK_HOME/bin:$PATH
+```
+
+---
+
+#### 3. Instala PySpark con pip
+
+```bash
+pip install pyspark
+```
+
+---
+
+#### 4. Verifica que todo funcione
+
+Abre una terminal Python y escribe:
+
+```python
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.appName("MiApp").getOrCreate()
+spark.range(5).show()
+```
+
+---
+
+### 🧪 Opción rápida para pruebas: Google Colab
+
+Puedes usar PySpark sin instalaciones locales, con Google Colab:
+
+```python
+!apt-get install openjdk-8-jdk-headless -qq > /dev/null
+!wget -q https://downloads.apache.org/spark/spark-3.3.2/spark-3.3.2-bin-hadoop3.tgz
+!tar xf spark-3.3.2-bin-hadoop3.tgz
+!pip install -q findspark
+
+import os
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-8-openjdk-amd64"
+os.environ["SPARK_HOME"] = "/content/spark-3.3.2-bin-hadoop3"
+
+import findspark
+findspark.init()
+```
+
+---
+
+### ☁️ Uso en la nube
+
+#### 🔷 Databricks
+
+* Plataforma basada en Spark.
+* Tiene entorno de notebooks, integración con Azure y AWS.
+* Ideal para producción y pruebas rápidas.
+
+#### 🔷 AWS Glue
+
+* Servicio sin servidor (serverless) para ETL con Spark.
+* Usa scripts en PySpark.
+* Escalable y listo para producción.
+
+---
+
+### ⚙️ Crear una SparkSession
+
+Casi todo en PySpark comienza con una `SparkSession`. Es la puerta de entrada al motor de Spark.
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("MiAplicacionPySpark") \
+    .config("spark.some.config.option", "valor") \
+    .getOrCreate()
+```
+
+Puedes agregar configuraciones como:
+
+* Número de cores locales (`.master("local[*]")`)
+* Nivel de logs
+* Configuraciones de Hive o SQL warehouse
+
+---
+
+### 🔍 Buenas prácticas
+
+* Usa `virtualenv` o `conda` para aislar entornos.
+* Usa `.master("local[*]")` para pruebas en tu PC.
+* Si usas notebooks, verifica que `SparkSession` no esté duplicada.
+* Revisa que Java y PySpark estén alineados en versión.

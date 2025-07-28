@@ -1,0 +1,140 @@
+---
+title: Spark SQL
+description: Uso avanzado de Spark SQL en PySpark.
+---
+
+
+### 🧠 ¿Qué es Spark SQL?
+
+**Spark SQL** es un módulo de Apache Spark para el procesamiento de datos estructurados. Permite ejecutar consultas SQL sobre DataFrames y RDDs, integrando lo mejor del mundo de SQL con la escalabilidad de Spark.
+
+### ✅ Ventajas de usar Spark SQL
+
+* Permite usar **sintaxis SQL estándar** sobre datos distribuidos.
+* Es compatible con **DataFrames** y tablas temporales.
+* Puede optimizar consultas mediante el **Catalyst Optimizer**.
+* Soporta integración con múltiples fuentes de datos (Parquet, JSON, Hive, JDBC, etc.).
+
+### 🧪 Crear una sesión de Spark con SQL
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("Ejemplo Spark SQL") \
+    .getOrCreate()
+```
+
+### 📘 Crear DataFrames y registrarlos como tablas
+
+```python
+df = spark.read.json("empleados.json")
+df.createOrReplaceTempView("empleados")
+```
+
+Esto permite ejecutar consultas SQL sobre `empleados`.
+
+### 🧾 Consultas SQL
+
+```python
+resultado = spark.sql("""
+    SELECT nombre, salario 
+    FROM empleados 
+    WHERE salario > 3000
+""")
+resultado.show()
+```
+
+### 🔁 Convertir RDD a DataFrame para SQL
+
+```python
+from pyspark.sql import Row
+
+rdd = spark.sparkContext.parallelize([
+    Row(nombre="Ana", edad=25),
+    Row(nombre="Luis", edad=30)
+])
+
+df = spark.createDataFrame(rdd)
+df.createOrReplaceTempView("personas")
+
+spark.sql("SELECT * FROM personas WHERE edad > 26").show()
+```
+
+### 🧩 Usar funciones SQL en PySpark
+
+Puedes utilizar muchas funciones SQL comunes directamente en código PySpark, como:
+
+* `F.col("columna")`
+* `F.lit(10)`
+* `F.upper()`, `F.lower()`
+* `F.when()`, `F.otherwise()`
+* `F.avg()`, `F.count()`, `F.sum()`
+
+Ejemplo:
+
+```python
+from pyspark.sql import functions as F
+
+df.select(
+    "nombre",
+    F.upper("nombre").alias("nombre_mayus")
+).show()
+```
+
+### 🧮 Consultas con agregaciones
+
+```python
+spark.sql("""
+    SELECT departamento, AVG(salario) as salario_promedio
+    FROM empleados
+    GROUP BY departamento
+""").show()
+```
+
+### 🧾 Operaciones JOIN con SQL
+
+```python
+spark.sql("""
+    SELECT e.nombre, d.nombre as departamento
+    FROM empleados e
+    JOIN departamentos d ON e.dep_id = d.id
+""").show()
+```
+
+### 🧱 Crear tablas permanentes
+
+Para consultas persistentes en múltiples sesiones:
+
+```python
+df.write.saveAsTable("tabla_empleados")
+```
+
+### 🗃️ Soporte para fuentes externas
+
+Puedes registrar una tabla basada en archivos externos:
+
+```python
+df = spark.read.csv("ventas.csv", header=True, inferSchema=True)
+df.createOrReplaceTempView("ventas")
+
+spark.sql("SELECT * FROM ventas WHERE monto > 1000").show()
+```
+
+También puedes conectarte a bases de datos relacionales con JDBC y consultarlas con SQL desde Spark.
+
+### 📈 Plan de ejecución
+
+Para ver cómo se ejecuta una consulta SQL:
+
+```python
+spark.sql("SELECT * FROM empleados").explain()
+```
+
+Esto muestra el plan lógico y físico de ejecución generado por **Catalyst Optimizer**.
+
+### 🔒 Consideraciones
+
+* **SQL es declarativo**, ideal para usuarios no familiarizados con programación funcional.
+* Las **consultas SQL pueden integrarse con transformaciones DataFrame**.
+* Se recomienda usar **Spark SQL o funciones integradas** en lugar de UDFs para mayor rendimiento.

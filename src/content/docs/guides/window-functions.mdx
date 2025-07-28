@@ -1,0 +1,72 @@
+---
+title: Funciones de ventana (Window Functions)
+description: Cómo usar window functions en PySpark.
+---
+
+Las funciones de ventana permiten realizar cálculos sobre un conjunto de filas relacionadas a la fila actual, sin colapsar el DataFrame como lo haría una agregación normal.
+
+### ✅ ¿Qué son las funciones de ventana?
+
+* Permiten usar funciones de agregación sin reducir el número de filas.
+* Comparables a `OVER()` en SQL.
+* Usadas para rankings, acumulados, diferencias entre filas, entre otros.
+
+### 📌 Componentes de una ventana
+
+1. **Partition By** – Divide los datos en grupos.
+2. **Order By** – Ordena las filas dentro de cada grupo.
+3. **Frame Specification** – Define el rango de filas a considerar (opcional).
+
+```python
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number, rank, dense_rank
+
+window_spec = Window.partitionBy("categoria").orderBy("ventas")
+```
+
+### 💡 Funciones más comunes
+
+| Función | Descripción |
+|---|---|
+| `row_number()` | Número consecutivo por grupo |
+| `rank()` | Ranking con saltos en empates |
+| `dense_rank()` | Ranking sin saltos |
+| `lag()` | Valor anterior de una fila |
+| `lead()` | Valor siguiente de una fila |
+| `sum()` | Acumulado por grupo |
+| `avg()` | Promedio por grupo |
+
+```python
+from pyspark.sql.functions import lag, lead, sum
+
+window_spec = Window.partitionBy("cliente").orderBy("fecha")
+
+df.withColumn("ventas_previas", lag("ventas", 1).over(window_spec))
+```
+
+### 🔍 Ejemplo práctico
+
+```python
+data = [("A", "2024-01-01", 100), ("A", "2024-01-02", 200),
+        ("B", "2024-01-01", 50), ("B", "2024-01-02", 80)]
+
+cols = ["cliente", "fecha", "ventas"]
+df = spark.createDataFrame(data, cols)
+
+window_spec = Window.partitionBy("cliente").orderBy("fecha")
+df = df.withColumn("acumulado", sum("ventas").over(window_spec))
+df.show()
+```
+
+### 📌 Buenas prácticas
+
+* Siempre especifica orden y partición claramente.
+* Cuidado con el tamaño del frame si estás trabajando con millones de filas.
+* Evita usar `orderBy` global dentro de la ventana si no es necesario.
+
+### 📊 ¿Dónde se usa?
+
+* Análisis temporal.
+* Cálculos acumulativos.
+* Rankings dentro de grupos.
+* Comparación entre registros consecutivos.

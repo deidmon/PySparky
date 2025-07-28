@@ -1,0 +1,108 @@
+---
+title: UDFs y funciones personalizadas
+description: Cómo crear y usar UDFs en PySpark.
+---
+
+En esta sección se abordan las **User-Defined Functions (UDFs)** y otras formas de crear funciones personalizadas para extender las capacidades de PySpark más allá de las funciones SQL integradas.
+
+### 🔍 ¿Qué es una UDF?
+
+Una **UDF (User Defined Function)** es una función personalizada escrita en Python (u otro lenguaje compatible) que puede aplicarse a columnas de un DataFrame en PySpark cuando las funciones integradas no son suficientes.
+
+⚠️ Las UDFs pueden afectar el rendimiento porque rompen la optimización del plan de ejecución de Spark y no pueden ser compiladas a código eficiente como las funciones integradas.
+
+### ✍️ Cómo crear y usar una UDF
+
+#### Paso 1: Definir la función
+
+Define una función normal de Python:
+
+```python
+def mayuscula(texto):
+    return texto.upper()
+```
+
+#### Paso 2: Convertirla en UDF
+
+Utiliza `F.udf()` y especifica el tipo de dato de salida:
+
+```python
+from pyspark.sql.functions import udf
+from pyspark.sql.types import StringType
+
+mayuscula_udf = udf(mayuscula, StringType())
+```
+
+#### Paso 3: Aplicarla sobre un DataFrame
+
+```python
+df.withColumn("nombre_mayus", mayuscula_udf(df["nombre"])).show()
+```
+
+### 🧠 Tipos de datos soportados en UDFs
+
+PySpark permite especificar los tipos de retorno mediante tipos de `pyspark.sql.types` como:
+
+* `StringType()`
+* `IntegerType()`
+* `FloatType()`
+* `BooleanType()`
+* `ArrayType()`, `MapType()`, `StructType()` (para estructuras complejas)
+
+### ⚡ UDFs con `@udf` (decorador)
+
+Otra forma más compacta de definir UDFs:
+
+```python
+from pyspark.sql.functions import udf
+
+@udf(returnType=StringType())
+def reverse_string(s):
+    return s[::-1]
+```
+
+### 🧊 UDFs con múltiples argumentos
+
+```python
+@udf(returnType=StringType())
+def concat_nombre_apellido(nombre, apellido):
+    return f"{nombre} {apellido}"
+```
+
+```python
+df.withColumn("nombre_completo", concat_nombre_apellido("nombre", "apellido"))
+```
+
+### 🧠 Pandas UDFs (más eficientes)
+
+**Pandas UDFs** permiten definir funciones personalizadas usando Pandas y son mucho más rápidas porque aprovechan Apache Arrow para mejorar el rendimiento.
+
+```python
+from pyspark.sql.functions import pandas_udf
+import pandas as pd
+
+@pandas_udf(StringType())
+def reverse_pandas(col: pd.Series) -> pd.Series:
+    return col.str[::-1]
+```
+
+```python
+df.withColumn("reversa", reverse_pandas("texto"))
+```
+
+### ⚠️ Consideraciones importantes
+
+| Aspecto | UDF estándar | Pandas UDF |
+|---|---|---|
+| Rendimiento | Bajo (no optimizable) | Alto (usa Apache Arrow) |
+| Serialización | Necesaria (costosa) | Optimizada |
+| Compatibilidad SQL | Limitada | Limitada |
+| Recomendación | Evitar si hay funciones nativas | Preferir sobre UDF estándar |
+
+### ✅ Buenas prácticas
+
+* Usa funciones integradas de Spark siempre que sea posible.
+* Si necesitas lógica compleja, considera **Pandas UDF** antes que UDF estándar.
+* Documenta claramente el tipo de retorno de cada UDF.
+* Evita aplicar UDFs dentro de filtros (`filter()`), ya que se ejecutan fila por fila.
+* Evalúa el impacto de rendimiento con `explain()` y pruebas controladas.

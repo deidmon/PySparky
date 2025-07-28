@@ -1,0 +1,137 @@
+---
+title: Transformaciones básicas
+description: Operaciones fundamentales para manipular datos en PySpark.
+---
+
+Las **transformaciones** en PySpark te permiten modificar, limpiar o preparar tus datos. Son operaciones **perezosas** (lazy), lo que significa que no se ejecutan hasta que aplicas una acción como `show()`, `collect()` o `write()`.
+
+### 🔹 `select()` – Seleccionar columnas
+
+```python
+df.select("nombre", "edad")
+```
+
+También puedes renombrar columnas:
+
+```python
+from pyspark.sql.functions import col
+
+df.select(col("nombre").alias("nombre_completo"))
+```
+
+### 🔹 `withColumn()` – Crear o modificar columnas
+
+```python
+df.withColumn("edad_doble", col("edad") * 2)
+```
+
+✅ Reemplaza una columna si ya existe, o la crea si no.
+
+### 🔹 `filter()` y `where()` – Filtrar registros
+
+```python
+df.filter(col("edad") > 25)
+df.where((col("edad") > 25) & (col("ciudad") == "Lima"))
+```
+
+Ambos métodos son equivalentes.
+
+### 🔹 `drop()` – Eliminar columnas
+
+```python
+df.drop("columna_innecesaria")
+```
+
+### 🔹 `distinct()` – Eliminar duplicados
+
+```python
+df.select("ciudad").distinct()
+```
+
+### 🔹 `dropDuplicates()` – Eliminar duplicados por columnas específicas
+
+```python
+df.dropDuplicates(["nombre", "edad"])
+```
+
+### 🔹 `orderBy()` y `sort()` – Ordenar filas
+
+```python
+df.orderBy(col("edad").desc())
+df.sort("nombre", "edad")
+```
+
+### 🔹 `limit()` – Limitar el número de filas
+
+```python
+df.limit(10).show()
+```
+
+### 🔹 `groupBy()` + `agg()` – Agrupar y agregar
+
+```python
+from pyspark.sql.functions import avg, max, count
+
+df.groupBy("departamento").agg(
+    avg("salario").alias("salario_promedio"),
+    max("salario").alias("salario_maximo"),
+    count("*").alias("total_empleados")
+)
+```
+
+### 🔹 `join()` – Unir DataFrames
+
+```python
+df1.join(df2, on="id", how="inner")  # left, right, outer también disponibles
+```
+
+Puedes especificar múltiples columnas con una lista:
+
+```python
+df1.join(df2, on=["id", "fecha"], how="left")
+```
+
+### 🔹 `union()` – Combinar filas de dos DataFrames
+
+```python
+df1.union(df2)
+```
+
+⚠️ Los DataFrames deben tener el **mismo número y orden de columnas**.
+
+### 🔹 `withColumnRenamed()` – Renombrar columnas
+
+```python
+df.withColumnRenamed("nombre_viejo", "nombre_nuevo")
+```
+
+### 🔹 `alias()` – Renombrar columnas temporalmente
+
+```python
+df.select(col("salario").alias("sueldo"))
+```
+
+### 🔹 `isNull()` y `isNotNull()` – Detectar valores nulos
+
+```python
+df.filter(col("email").isNull())
+df.filter(col("email").isNotNull())
+```
+
+### 🛠 Ejemplo práctico combinado
+
+```python
+from pyspark.sql.functions import col, when
+
+df_clean = df.filter(col("edad").isNotNull()) \
+    .withColumn("nivel", when(col("edad") < 18, "menor")
+                .otherwise("adulto")) \
+    .drop("telefono") \
+    .orderBy(col("edad").desc())
+```
+
+### ✅ Buenas prácticas
+
+* Evita crear múltiples `withColumn()` encadenados si puedes hacer todo en uno.
+* Usa `select()` para seleccionar solo las columnas necesarias (mejor performance).
+* Evita usar `collect()` con muchos datos: mueve todo a memoria local.

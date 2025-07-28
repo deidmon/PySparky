@@ -1,0 +1,176 @@
+---
+title: Casos de uso avanzados
+description: Ejemplos avanzados y aplicaciones reales de PySpark.
+---
+
+
+Esta sección cubre situaciones más complejas y realistas que puedes encontrar en entornos de producción, donde PySpark brilla por su capacidad de escalar y procesar datos distribuidos eficientemente.
+
+### 1. 🧊 Manejo de grandes volúmenes de datos (Big Data)
+
+**Problema:** Procesar decenas o cientos de gigabytes de logs de eventos, ventas, o sensores.
+
+**Solución:**
+
+* Leer datos particionados: particionar por fecha u otra clave importante.
+* Usar Parquet o Delta Lake: para mejorar rendimiento.
+
+**Ejemplo:**
+
+```python
+df = spark.read.parquet("s3://bucket/logs/year=2024/month=07/")
+df = df.filter("event_type = 'click' AND country = 'PE'")
+```
+
+### 2. 🔁 Procesamiento incremental (tareas diarias o por lotes)
+
+**Problema:** Evitar reprocesar todos los datos cada vez.
+
+**Solución:**
+
+* Usar marcas de tiempo (last_updated) o claves de control (run_id).
+* Filtrar solo los registros nuevos o modificados.
+
+```python
+df_incremental = df.filter(col("fecha_evento") >= "2024-07-01")
+```
+
+### 3. 💽 Integración con bases de datos (MySQL, PostgreSQL, SQL Server)
+
+**Problema:** Extraer o cargar datos a RDBMS para análisis o dashboards.
+
+**Solución:**
+
+```python
+# Lectura
+df_mysql = spark.read \
+    .format("jdbc") \
+    .option("url", "jdbc:mysql://host:3306/bd") \
+    .option("dbtable", "ventas") \
+    .option("user", "usuario") \
+    .option("password", "clave") \
+    .load()
+
+# Escritura
+df_result.write.mode("overwrite").jdbc(...)
+```
+
+### 4. 💥 Manejo de datos corruptos o malformados
+
+**Problema:** Archivos CSV o JSON con datos sucios, columnas mal alineadas, o errores de encoding.
+
+**Solución:**
+
+* Usa `badRecordsPath` en lectura.
+* Lee con `PERMISSIVE`, `DROPMALFORMED`, o `FAILFAST`.
+
+```python
+df = spark.read.option("mode", "PERMISSIVE") \
+    .option("badRecordsPath", "/errores/") \
+    .csv("datos_malos.csv")
+```
+
+### 5. 🧮 Agregaciones complejas y ventanas
+
+**Problema:** Calcular promedios móviles, rankings, acumulados, diferencias por grupo.
+
+**Solución:**
+
+```python
+from pyspark.sql.window import Window
+from pyspark.sql.functions import avg, row_number
+
+window_spec = Window.partitionBy("cliente").orderBy("fecha")
+
+df = df.withColumn("promedio_movil", avg("monto").over(window_spec))
+df = df.withColumn("rank", row_number().over(window_spec))
+```
+
+### 6. 🔄 Join de múltiples fuentes distribuidas
+
+**Problema:** Hacer joins entre datasets de diferentes sistemas (parquet + base de datos, por ejemplo).
+
+**Solución:**
+
+* Estandarizar claves (cast, trim, lower).
+* Usar `broadcast()` si uno de los datasets es pequeño.
+
+```python
+from pyspark.sql.functions import broadcast
+
+df = df_parquet.join(broadcast(df_mysql), on="cliente_id", how="inner")
+```
+
+### 7. 📈 Detección de anomalías
+
+**Problema:** Identificar valores fuera de rango esperado, montos atípicos, registros duplicados.
+
+**Solución:**
+
+Usar filtros estadísticos:
+
+```python
+q1, q3 = df.approxQuantile("monto", [0.25, 0.75], 0.01)
+iqr = q3 - q1
+lim_inferior = q1 - 1.5 * iqr
+lim_superior = q3 + 1.5 * iqr
+
+df_anomalias = df.filter((col("monto") < lim_inferior) | (col("monto") > lim_superior))
+```
+
+### 8. 🔁 Pipelines de ETL escalables
+
+**Problema:** Definir flujos de transformación reproducibles y modulares.
+
+**Solución:**
+
+Estructura tu código como un pipeline:
+
+```python
+def leer_datos():
+    return spark.read.parquet("s3://datos/origen")
+
+def transformar(df):
+    return df.filter("monto > 0").withColumn("año", year("fecha"))
+
+def guardar(df):
+    df.write.mode("overwrite").partitionBy("año").parquet("s3://datos/procesados")
+
+# Pipeline
+df = leer_datos()
+df = transformar(df)
+guardar(df)
+```
+
+### 9. 🧪 Unión y validación de datos externos (data enrichment)
+
+**Problema:** Enriquecer datos locales con información externa (API, catálogo de productos, tasas de cambio).
+
+**Solución:**
+
+* Unir un DataFrame con tasas o catálogos.
+* O usar una API y convertir los datos a DataFrame antes de hacer join.
+
+### 10. 🧠 Machine Learning con MLlib
+
+**Problema:** Aplicar modelos de clustering, regresión, clasificación a gran escala.
+
+**Solución:**
+
+```python
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.regression import LinearRegression
+
+df = df.select("monto", "dias_activo", "visitas")
+assembler = VectorAssembler(inputCols=["dias_activo", "visitas"], outputCol="features")
+df = assembler.transform(df)
+
+modelo = LinearRegression(featuresCol="features", labelCol="monto")
+modelo_entrenado = modelo.fit(df)
+```
+
+### 🧭 Recomendaciones finales
+
+* Aprovecha Spark SQL + DataFrame API juntos para más flexibilidad.
+* Siempre evalúa particiones, almacenamiento intermedio (`cache()`), y el orden de operaciones.
+* Diseña flujos robustos para entornos con datos cambiantes o faltantes.

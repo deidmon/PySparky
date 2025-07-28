@@ -1,0 +1,114 @@
+---
+title: Tipos de datos y manejo de valores nulos
+description: Cómo trabajar con tipos de datos y valores nulos en PySpark.
+---
+
+Trabajar correctamente con **tipos de datos** y **valores nulos** es fundamental en PySpark, ya que errores de tipo o datos faltantes pueden generar fallas silenciosas o errores al ejecutar transformaciones.
+
+### 🔹 Tipos de datos en PySpark (`DataTypes`)
+
+PySpark tiene tipos de datos similares a SQL y pandas, pero definidos en `pyspark.sql.types`.
+
+#### 📦 Tipos más comunes:
+
+| Tipo PySpark | Descripción |
+|---|---|
+| `StringType()` | Texto (cadenas de caracteres) |
+| `IntegerType()` | Enteros |
+| `FloatType()` | Decimales de precisión simple |
+| `DoubleType()` | Decimales de doble precisión |
+| `BooleanType()` | Verdadero/Falso |
+| `DateType()` | Fecha sin hora |
+| `TimestampType()` | Fecha y hora |
+
+#### 📌 Ejemplo de esquema manual:
+
+```python
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+schema = StructType([
+    StructField("nombre", StringType(), True),
+    StructField("edad", IntegerType(), True)
+])
+```
+
+### 🔹 Conversión de tipos (`cast`)
+
+Puedes cambiar el tipo de una columna con `cast()`:
+
+```python
+from pyspark.sql.functions import col
+
+df.withColumn("edad", col("edad").cast("double"))
+```
+
+✅ Útil cuando Spark infiere mal los tipos o al leer datos desde CSV.
+
+### 🔹 Verificación de tipos
+
+```python
+df.dtypes         # Lista de columnas y sus tipos
+df.printSchema()  # Visualización del esquema jerárquico
+```
+
+#### ⚠️ Errores comunes por tipos de datos
+
+* Comparar `StringType` con `IntegerType`
+* Multiplicar columnas de tipo `null`
+* Usar funciones matemáticas con valores no numéricos
+
+### 🚨 Manejo de valores nulos
+
+Los valores nulos (`null`) son muy comunes en datasets reales. PySpark ofrece varias funciones para trabajar con ellos de forma segura.
+
+### 🔹 Detectar nulos: `isNull()` y `isNotNull()`
+
+```python
+df.filter(col("email").isNull())
+df.filter(col("edad").isNotNull())
+```
+
+### 🔹 Eliminar filas nulas: `dropna()`
+
+```python
+df.dropna()                      # Elimina filas con cualquier nulo
+df.dropna(subset=["nombre"])     # Solo si 'nombre' es nulo
+```
+
+### 🔹 Rellenar nulos: `fillna()`
+
+```python
+df.fillna({"ciudad": "Desconocido", "edad": 0})
+```
+
+También funciona para una sola columna:
+
+```python
+df.fillna("SinNombre", subset=["nombre"])
+```
+
+### 🔹 Reemplazar valores: `na.replace()`
+
+```python
+df.na.replace("NA", None)
+df.na.replace(["", "n/a"], "Desconocido", subset=["ciudad"])
+```
+
+### 🔹 Valores nulos en agregaciones
+
+Algunas funciones ignoran automáticamente los nulos (`avg`, `sum`), pero otras podrían verse afectadas. Es buena práctica limpiar o imputar antes de agregaciones.
+
+### 🧠 Buenas prácticas
+
+* **Revisa siempre los nulos** antes de transformaciones (`filter`, `groupBy`, `join`).
+* **Evita errores de tipo** usando `cast` cuando leas desde CSV o JSON.
+* **Define esquemas explícitos** en lectura de datos complejos.
+* Usa `.fillna()` en columnas clave como IDs, nombres o edades.
+
+### 🧪 Ejemplo completo de limpieza
+
+```python
+df_limpio = df.dropna(subset=["nombre"]) \
+              .fillna({"ciudad": "Desconocido", "edad": 0}) \
+              .withColumn("edad", col("edad").cast("integer"))
+```

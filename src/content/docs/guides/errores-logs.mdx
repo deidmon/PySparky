@@ -1,0 +1,119 @@
+---
+title: Manejo de errores y logs
+description: Cómo gestionar errores y logs en PySpark.
+---
+
+### 🧠 ¿Por qué es importante?
+
+Cuando trabajamos con datos distribuidos en PySpark, los errores pueden ser difíciles de detectar y depurar si no se manejan adecuadamente. Además, el **registro de logs** es esencial para entender cómo se está comportando una aplicación y poder hacer un seguimiento eficiente en producción.
+
+### ✅ Objetivos clave
+
+* Detectar y manejar errores durante el procesamiento distribuido.
+* Utilizar los logs para depurar y monitorear procesos.
+* Capturar excepciones y registrar fallos o advertencias.
+
+### 🛑 Manejo de errores (try-except)
+
+Puedes capturar errores de forma tradicional en Python con bloques `try-except`, especialmente útil cuando trabajas con funciones personalizadas o transformaciones complejas.
+
+```python
+try:
+    df = spark.read.csv("archivo_inexistente.csv")
+except Exception as e:
+    print("Error al leer el archivo:", e)
+```
+
+### 🧪 Validación de datos antes del procesamiento
+
+Es buena práctica validar tipos y columnas antes de realizar transformaciones:
+
+```python
+if "edad" in df.columns:
+    df = df.filter(df.edad > 18)
+else:
+    print("La columna 'edad' no existe.")
+```
+
+### 🐞 UDFs y manejo de errores
+
+Si usas funciones UDF, debes incluir validación dentro de ellas:
+
+```python
+from pyspark.sql.functions import udf
+from pyspark.sql.types import IntegerType
+
+def safe_divide(x):
+    try:
+        return 10 / x
+    except Exception:
+        return None
+
+divide_udf = udf(safe_divide, IntegerType())
+df = df.withColumn("resultado", divide_udf("columna"))
+```
+
+### 📋 Logs en PySpark
+
+#### Configurar nivel de log
+
+Puedes ajustar el nivel de log para reducir la verbosidad o mostrar solo lo necesario:
+
+```python
+spark.sparkContext.setLogLevel("WARN")
+```
+
+Niveles comunes:
+* `"ALL"`
+* `"DEBUG"`
+* `"INFO"`
+* `"WARN"`
+* `"ERROR"`
+* `"FATAL"`
+* `"OFF"`
+
+### 📄 Ver los logs de ejecución
+
+Cuando corres PySpark localmente o en un clúster, Spark genera registros con información como:
+
+* Ejecución de tareas (stages/tasks)
+* Errores de lectura/escritura
+* Fallos de nodos
+* Optimización de queries
+
+Estos logs suelen verse en consola o en el **Spark UI**.
+
+### 🧰 Uso del Spark UI (modo clúster o local)
+
+El **Spark Web UI** (por defecto en `http://localhost:4040`) te permite:
+
+* Ver tareas y etapas ejecutadas.
+* Identificar cuellos de botella.
+* Ver errores específicos por partición.
+* Revisar los DAGs y el plan de ejecución.
+
+### 🧼 Buenas prácticas
+
+* ✅ Validar datos antes de transformarlos.
+* ✅ Utilizar `try-except` en operaciones críticas.
+* ✅ Registrar errores con `print()` o bibliotecas de logging.
+* ✅ Evitar errores silenciosos en UDFs.
+* ✅ Revisar constantemente los logs del Spark UI.
+* ✅ Establecer el log level adecuado (`WARN` o `ERROR` en producción).
+
+### 📘 Logging con la biblioteca `logging` de Python
+
+Para tener control más estructurado:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    df = spark.read.json("datos.json")
+    logger.info("Lectura completada")
+except Exception as e:
+    logger.error("Fallo al leer el archivo JSON", exc_info=True)
+```

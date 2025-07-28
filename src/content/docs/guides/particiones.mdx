@@ -1,0 +1,72 @@
+---
+title: Manejo de particiones
+description: Cómo PySpark gestiona las particiones de datos.
+---
+
+El manejo eficiente de particiones en PySpark es fundamental para lograr un buen rendimiento al trabajar con grandes volúmenes de datos distribuidos.
+
+### 🧱 ¿Qué es una partición?
+
+Una **partición** en PySpark representa una división lógica de los datos que permite que se procesen en paralelo en un clúster de Spark. Cada partición se procesa por separado en un executor.
+
+### ⚙️ ¿Por qué son importantes?
+
+* Mejoran la paralelización.
+* Impactan en el uso de memoria y procesamiento.
+* Afectan el rendimiento de lecturas y escrituras.
+
+### 📌 Comandos clave para trabajar con particiones
+
+```python
+# Número de particiones de un DataFrame
+df.rdd.getNumPartitions()
+
+# Reparticionar (shuffle)
+df_repart = df.repartition(4)
+
+# Coalescer (sin shuffle)
+df_coalesce = df.coalesce(2)
+```
+
+### 🔄 Diferencia entre repartition() y coalesce()
+
+| Método | Shuffle | Uso recomendado |
+|---|---|---|
+| `repartition()` | Sí | Aumentar número de particiones |
+| `coalesce()` | No | Reducir número de particiones |
+
+### 📦 Particionamiento al escribir archivos
+
+Puedes particionar tus datos al momento de escribirlos para optimizar consultas posteriores:
+
+```python
+df.write.partitionBy("anio", "mes").parquet("/ruta/destino")
+```
+
+Esto crea una carpeta por cada combinación de valores de las columnas particionadas, útil en consultas donde se filtra por esas columnas.
+
+### 🧠 Buenas prácticas
+
+* Usa `repartition()` si vas a hacer joins o agregaciones pesadas.
+* Usa `coalesce()` al guardar archivos grandes en menos particiones.
+* No uses muchas particiones pequeñas (overhead innecesario).
+* Particiona por columnas con alta cardinalidad para evitar skew.
+* Evita particionar por columnas con demasiados valores únicos si no vas a filtrarlas después.
+
+### 📊 Visualización de particiones (debug)
+
+```python
+df.rdd.glom().map(len).collect()
+```
+
+Permite ver cuántos registros hay en cada partición.
+
+### 🧪 Ejemplo práctico
+
+```python
+df = spark.range(0, 100).repartition(5)
+print(df.rdd.getNumPartitions())  # 5
+
+df2 = df.coalesce(2)
+print(df2.rdd.getNumPartitions())  # 2
+```

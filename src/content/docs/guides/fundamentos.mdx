@@ -1,0 +1,110 @@
+---
+title: Fundamentos de PySpark
+description: Conceptos clave y arquitectura de PySpark.
+---
+
+
+Esta sección cubre los conceptos esenciales para entender cómo funciona PySpark, qué tipo de estructuras maneja, y cómo manipular tus datos de forma inicial.
+
+### 🔹 ¿Qué es un DataFrame en PySpark?
+
+Un **DataFrame** es una colección distribuida de datos estructurados, similar a una tabla en SQL o un `DataFrame` en pandas.
+
+* Soporta operaciones como: `select`, `filter`, `join`, `groupBy`.
+* Es inmutable (como RDDs): cada transformación genera uno nuevo.
+* Se ejecuta de forma **lazy** (diferida): no corre hasta que llamas una acción como `show()`, `count()`, `collect()`.
+
+### 🔹 PySpark vs pandas
+
+| Característica | pandas | PySpark |
+|---|---|---|
+| Escala | Memoria local | Datos distribuidos |
+| Velocidad (pequeños) | Muy rápida | Más lenta que pandas |
+| Velocidad (grandes) | Se cae | Alta performance |
+| APIs | Familiar | Similar a SQL |
+
+### 🔹 ¿Qué es un RDD?
+
+Un **RDD** (Resilient Distributed Dataset) es la estructura más básica de Spark. Es una colección inmutable y distribuida de objetos de bajo nivel.
+
+⚠️ Usa RDDs solo cuando necesites manipular datos a nivel muy bajo o no estructurados.
+
+### 🔹 Crear un DataFrame
+
+#### Desde una lista de diccionarios
+
+```python
+datos = [{"nombre": "Juan", "edad": 30}, {"nombre": "Ana", "edad": 25}]
+df = spark.createDataFrame(datos)
+df.show()
+```
+
+#### Desde un archivo
+
+```python
+df = spark.read.csv("clientes.csv", header=True, inferSchema=True)
+```
+
+### 🔹 Inspección de datos
+
+```python
+df.show(5)          # Muestra las primeras filas
+df.printSchema()    # Muestra el esquema
+df.columns          # Lista de columnas
+df.dtypes           # Tipos de datos
+df.describe().show() # Estadísticas básicas
+```
+
+### 🔹 Acciones vs Transformaciones
+
+| Tipo | Ejemplo | ¿Qué hace? |
+|---|---|---|
+| Transformación | `select`, `filter` | Devuelve un nuevo DataFrame (no ejecuta nada aún) |
+| Acción | `show`, `count` | Ejecuta el plan de ejecución y devuelve resultados |
+
+Ejemplo:
+
+```python
+df2 = df.filter(df.edad > 25)  # TRANSFORMACIÓN
+df2.show()                     # ACCIÓN (aquí se ejecuta)
+```
+
+### 🔹 Esquemas: Tipado explícito
+
+Puedes definir el esquema manualmente para mayor control:
+
+```python
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+esquema = StructType([
+    StructField("nombre", StringType(), True),
+    StructField("edad", IntegerType(), True)
+])
+
+df = spark.read.schema(esquema).json("clientes.json")
+```
+
+### 🔹 Conversión entre estructuras
+
+#### De pandas a PySpark
+
+```python
+import pandas as pd
+
+pdf = pd.DataFrame({"nombre": ["Juan"], "edad": [30]})
+df = spark.createDataFrame(pdf)
+```
+
+#### De PySpark a pandas
+
+```python
+df_pandas = df.toPandas()
+```
+
+⚠️ Evita usar `toPandas()` con grandes volúmenes de datos. Puede colapsar tu RAM.
+
+### 🔹 Buenas prácticas
+
+* Siempre inspecciona el esquema (`printSchema`) antes de hacer transformaciones.
+* Si trabajas con archivos grandes, usa `inferSchema=False` y define tú mismo el esquema.
+* Prefiere usar DataFrames sobre RDDs siempre que sea posible.
